@@ -45,26 +45,33 @@ embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
+# Define OneDrive folder path using os.path.join for cross-platform compatibility
 onedrive_folder = os.path.join("C:", "Users", "jatin.malhotra", "OneDrive - HCL TECHNOLOGIES LIMITED", "Documents", "SON Documents", "23A.1")
 if os.path.exists(onedrive_folder):
-    print("Folder exists:", os.listdir(onedrive_folder))  # Lists all files
+    st.write("Folder exists:", os.listdir(onedrive_folder))
 else:
-    print("Folder does not exist!")
+    st.write("Folder does not exist!")
 
 
 # Get PDF files from OneDrive folder
-def get_pdf_files(onedrive_folder):
+def get_pdf_files(folder_path):
+    """
+    Get a list of PDF files from the specified OneDrive folder.
+    """
     try:
-        pdf_files = [os.path.join(root, file) for root, dirs, files in os.walk(onedrive_folder) if file.endswith(".pdf")]
+        pdf_files = []
+        for root, dirs, files in os.walk(folder_path):
+            for filename in files:
+                if filename.endswith(".pdf"):
+                    pdf_files.append(os.path.join(root, filename))
         logging.info(f"Found {len(pdf_files)} PDF files")
         return pdf_files
     except Exception as e:
         logging.error(f"Error searching OneDrive: {e}")
         return []
 
-pdf_files = get_pdf_files(onedrive_path)
+pdf_files = get_pdf_files(onedrive_folder)
 st.write("Found PDF files:", pdf_files)
-
 
 # Read PDF contents
 def read_pdf_contents(pdf_file):
