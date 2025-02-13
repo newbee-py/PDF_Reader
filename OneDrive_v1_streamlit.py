@@ -45,6 +45,13 @@ embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
+onedrive_folder = "C:\Users\jatin.malhotra\OneDrive - HCL TECHNOLOGIES LIMITED\Documents\SON Documents\23A.1"
+if os.path.exists(onedrive_folder):
+    print("Folder exists:", os.listdir(onedrive_folder))  # Lists all files
+else:
+    print("Folder does not exist!")
+
+
 # Get PDF files from OneDrive folder
 def get_pdf_files(onedrive_folder):
     try:
