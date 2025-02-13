@@ -4,3 +4,4 @@ PyPDF2
 sentence-transformers
 pinecone
 dask[distributed]
+ pysqlite3-binary
