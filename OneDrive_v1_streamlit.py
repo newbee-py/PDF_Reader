@@ -62,6 +62,10 @@ def get_pdf_files(onedrive_folder):
         logging.error(f"Error searching OneDrive: {e}")
         return []
 
+pdf_files = get_pdf_files(onedrive_path)
+st.write("Found PDF files:", pdf_files)
+
+
 # Read PDF contents
 def read_pdf_contents(pdf_file):
     try:
