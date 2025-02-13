@@ -7,7 +7,7 @@ import os
 import openai
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
-import pysqlite3 # type: ignore
+import pysqlite3  # type: ignore
 import chromadb
 from chromadb import PersistentClient
 import hashlib
@@ -23,15 +23,10 @@ logging.basicConfig(level=logging.INFO)
 # ✅ Disable telemetry to avoid errors
 os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
-# ✅ Use persistent ChromaDB client
-chroma_client = PersistentClient(path="./chroma_db")
-chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
-
 # ✅ Fix PyTorch threading issues and Force CPU mode
 import torch
 device = torch.device("cpu")
 torch.set_num_threads(1)
-
 
 # OpenAI API Key
 OPENAI_API_KEY = "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"
@@ -41,8 +36,8 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
 
-# ChromaDB Client (Persistent Storage)
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+# ✅ Use persistent ChromaDB client (only one instance)
+chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
 # Define OneDrive folder path using os.path.join for cross-platform compatibility
@@ -51,7 +46,6 @@ if os.path.exists(onedrive_folder):
     st.write("Folder exists:", os.listdir(onedrive_folder))
 else:
     st.write("Folder does not exist!")
-
 
 # Get PDF files from OneDrive folder
 def get_pdf_files(folder_path):
@@ -62,7 +56,7 @@ def get_pdf_files(folder_path):
         pdf_files = []
         for root, dirs, files in os.walk(folder_path):
             for filename in files:
-                if filename.endswith(".pdf"):
+                if filename.lower().endswith(".pdf"):
                     pdf_files.append(os.path.join(root, filename))
         logging.info(f"Found {len(pdf_files)} PDF files")
         return pdf_files
@@ -145,7 +139,10 @@ def generate_response(query, context):
         prompt = f"Context:\n{context}\n\nQuestion:\n{query}\n\nAnswer:"
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
             max_tokens=2000,
         )
         return response.choices[0].message.content.strip() if response.choices else "No response generated."
@@ -177,10 +174,11 @@ def process_input(onedrive_path, user_input):
 st.title("PDF Search and Analysis - OneDrive with OpenAI")
 
 with st.form(key="pdf_search_form"):
-    onedrive_path = st.text_input(label="OneDrive Folder Path")
+    # The user-provided onedrive path will override the default if supplied.
+    onedrive_path_input = st.text_input(label="OneDrive Folder Path", value=onedrive_folder)
     user_input = st.text_input(label="Query")
     submit_button = st.form_submit_button(label="Submit")
 
 if submit_button:
-    result = process_input(onedrive_path, user_input)
+    result = process_input(onedrive_path_input, user_input)
     st.write(result)
