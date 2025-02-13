@@ -29,6 +29,7 @@ chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
 # ✅ Fix PyTorch threading issues
 import torch
+device = "cpu"
 torch.set_num_threads(1)
 
 
@@ -38,7 +39,7 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Embedding model
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
-embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
 
 # ChromaDB Client (Persistent Storage)
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
