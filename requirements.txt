@@ -3,5 +3,4 @@ openai
 PyPDF2
 sentence-transformers
 pinecone
-dask
 dask[distributed]
