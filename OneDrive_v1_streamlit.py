@@ -3,8 +3,7 @@ import os
 import openai
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
-import faiss
-import numpy as np
+import pinecone
 import hashlib
 import logging
 import concurrent.futures
@@ -23,8 +22,14 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
-# FaissDB index
-index = faiss.IndexFlatL2(embedding_model.get_sentence_embedding_dimension())
+# PineconeDB configuration
+PINECONE_API_KEY = "YOUR_PINECONE_API_KEY"
+PINECONE_ENVIRONMENT = "YOUR_PINECONE_ENVIRONMENT"
+PINECONE_INDEX_NAME = "YOUR_PINECONE_INDEX_NAME"
+
+# Initialize PineconeDB client
+pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+index = pinecone.Index(PINECONE_INDEX_NAME)
 
 # Get PDF files from OneDrive folder
 def get_pdf_files(onedrive_folder):
@@ -74,26 +79,26 @@ def process_chunk(chunk):
         # Embed the chunk
         embedding = embedding_model.encode(chunk).tolist()
 
-        # Add to FaissDB index
-        index.add(np.array([embedding]))
+        # Add to PineconeDB index
+        index.upsert([(chunk_id, embedding)])
 
-        return f"Embedded and added chunk to FaissDB with ID {chunk_id}"
+        return f"Embedded and added chunk to PineconeDB with ID {chunk_id}"
     except Exception as e:
         return f"Error processing chunk: {e}"
 
-# Embed and add to FaissDB using Dask
+# Embed and add to PineconeDB using Dask
 def embed_and_add_dask(text_chunks):
     delayed_results = [delayed(process_chunk)(chunk) for chunk in text_chunks]
     results = dask.compute(*delayed_results)
     for result in results:
         logging.info(result)
 
-# Count embeddings in FaissDB
+# Count embeddings in PineconeDB
 def count_embeddings():
     try:
-        return index.ntotal
+        return index.describe_index_stats()["vector_count"]
     except Exception as e:
-        logging.error(f"Error counting embeddings in FaissDB: {e}")
+        logging.error(f"Error counting embeddings in PineconeDB: {e}")
         return 0
 
 # Query database
@@ -102,8 +107,8 @@ def query_database(query, k=5):
         return []
     query_embedding = embedding_model.encode(query).tolist()
     try:
-        D, I = index.search(np.array([query_embedding]), k)
-        return I[0].tolist()
+        results = index.query(vectors=[query_embedding], top_k=k)
+        return [result["id"] for result in results["matches"]]
     except Exception as e:
         logging.error(f"Error querying database: {e}")
         return []
