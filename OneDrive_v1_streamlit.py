@@ -3,6 +3,7 @@ import os
 import openai
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
+import pysqlite3-binary
 import chromadb
 import hashlib
 import logging
