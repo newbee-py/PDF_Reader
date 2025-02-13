@@ -27,9 +27,9 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
-# ✅ Fix PyTorch threading issues
+# ✅ Fix PyTorch threading issues and Force CPU mode
 import torch
-device = "cpu"
+device = torch.device("cpu")
 torch.set_num_threads(1)
 
 
