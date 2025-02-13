@@ -2,5 +2,5 @@ streamlit
 openai
 PyPDF2
 sentence-transformers
-faiss==1.5.3
+pinecone
 dask
