@@ -2,6 +2,6 @@ streamlit
 openai
 PyPDF2
 sentence-transformers
-pinecone
+faiss
 dask[distributed]
- pysqlite3-binary
+pysqlite3-binary
