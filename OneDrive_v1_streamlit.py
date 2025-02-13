@@ -27,6 +27,8 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 import torch
 device = torch.device("cpu")
 torch.set_num_threads(1)
+os.environ["STREAMLIT_WATCHED_FILES_EXCLUDE"] = "torch"
+
 
 # OpenAI API Key
 OPENAI_API_KEY = "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"
@@ -66,6 +68,22 @@ def get_pdf_files(folder_path):
 
 pdf_files = get_pdf_files(onedrive_folder)
 st.write("Found PDF files:", pdf_files)
+
+# Alternatively, let the user upload PDFs directly:
+uploaded_files = st.file_uploader("Upload PDF files", accept_multiple_files=True, type=["pdf"])
+
+# Process uploaded PDFs:
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        # Uploaded files are BytesIO objects; pass them directly to PdfReader
+        try:
+            pdf_reader = PdfReader(uploaded_file)
+            text = "".join(page.extract_text() or "" for page in pdf_reader.pages)
+            st.write(f"Extracted text from {uploaded_file.name}:")
+            st.write(text[:500] + "...")
+            # Here you can also further process the text (e.g., chunk it, embed, etc.)
+        except Exception as e:
+            st.error(f"Error reading {uploaded_file.name}: {e}")
 
 # Read PDF contents
 def read_pdf_contents(pdf_file):
