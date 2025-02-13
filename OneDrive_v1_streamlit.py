@@ -9,6 +9,7 @@ from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 import pysqlite3 # type: ignore
 import chromadb
+from chromadb import PersistentClient
 import hashlib
 import logging
 import concurrent.futures
@@ -20,8 +21,21 @@ from dask.distributed import Client
 logging.basicConfig(level=logging.INFO)
 
 # OpenAI API Key
-OPENAI_API_KEY = "your-api-key"
+OPENAI_API_KEY = "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
+"
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+# Disable telemetry to avoid errors
+os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
+
+# Use persistent ChromaDB client
+chroma_client = PersistentClient(path="./chroma_db")
+chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
+
+# Fix PyTorch threading issues
+import torch
+torch.set_num_threads(1)
+
 
 # Embedding model
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
