@@ -5,3 +5,7 @@ sentence-transformers
 chromadb
 dask[distributed]
 pysqlite3-binary
+torch
+torchvision
+torchaudio
+
