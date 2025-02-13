@@ -3,8 +3,7 @@ import os
 import openai
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
-import faiss
-import numpy as np
+import chromadb
 import hashlib
 import logging
 import concurrent.futures
@@ -23,8 +22,9 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
-# FaissDB index
-index = faiss.IndexFlatL2(embedding_model.get_sentence_embedding_dimension())
+# Vector database
+chroma_client = chromadb.Client()
+chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
 # Get PDF files from OneDrive folder
 def get_pdf_files(onedrive_folder):
@@ -74,26 +74,35 @@ def process_chunk(chunk):
         # Embed the chunk
         embedding = embedding_model.encode(chunk).tolist()
 
-        # Add to FaissDB index
-        index.add(np.array([embedding]))
-
-        return f"Embedded and added chunk to FaissDB with ID {chunk_id}"
+        # Check if the chunk already exists in the database
+        existing_documents = chroma_collection.query(query_embeddings=[embedding], n_results=1)
+        if not existing_documents.get("documents"):
+            chroma_collection.add(ids=[chunk_id], documents=[chunk], embeddings=[embedding])
+            return f"Embedded and added chunk to vector database with ID {chunk_id}"
+        else:
+            return f"Chunk already exists in the database with ID {chunk_id}"
     except Exception as e:
         return f"Error processing chunk: {e}"
 
-# Embed and add to FaissDB using Dask
+# Embed and add to vector database using Dask
 def embed_and_add_dask(text_chunks):
     delayed_results = [delayed(process_chunk)(chunk) for chunk in text_chunks]
     results = dask.compute(*delayed_results)
     for result in results:
         logging.info(result)
 
-# Count embeddings in FaissDB
+# Count embeddings in Chroma DB
 def count_embeddings():
     try:
-        return index.ntotal
+        all_documents = chroma_collection.get()
+        if not all_documents:
+            logging.info("No embeddings found in Chroma DB.")
+            return 0
+        total_embeddings = len(all_documents)
+        logging.info(f"Total embeddings in Chroma DB: {total_embeddings}")
+        return total_embeddings
     except Exception as e:
-        logging.error(f"Error counting embeddings in FaissDB: {e}")
+        logging.error(f"Error counting embeddings in Chroma DB: {e}")
         return 0
 
 # Query database
@@ -102,12 +111,12 @@ def query_database(query, k=5):
         return []
     query_embedding = embedding_model.encode(query).tolist()
     try:
-        D, I = index.search(np.array([query_embedding]), k)
-        return I[0].tolist()
+        results = chroma_collection.query(query_embeddings=[query_embedding], n_results=k)
+        return results.get("documents", [])
     except Exception as e:
         logging.error(f"Error querying database: {e}")
         return []
-    
+
 # Generate response with OpenAI
 def generate_response(query, context):
     try:
