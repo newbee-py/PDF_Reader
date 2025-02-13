@@ -4,7 +4,6 @@ import openai
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 import pysqlite3
-import chromadb
 import hashlib
 import logging
 import concurrent.futures
