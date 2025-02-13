@@ -20,22 +20,21 @@ from dask.distributed import Client
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-# OpenAI API Key
-# OpenAI API Key
-OPENAI_API_KEY = "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"
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
-
-# Disable telemetry to avoid errors
+# ✅ Disable telemetry to avoid errors
 os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
-# Use persistent ChromaDB client
+# ✅ Use persistent ChromaDB client
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
-# Fix PyTorch threading issues
+# ✅ Fix PyTorch threading issues
 import torch
 torch.set_num_threads(1)
 
+
+# OpenAI API Key
+OPENAI_API_KEY = "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"
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Embedding model
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
