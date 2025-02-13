@@ -2,10 +2,6 @@ __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-pip uninstall torch torchvision torchaudio -y
-pip cache purge
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
 import streamlit as st
 import os
 import openai
