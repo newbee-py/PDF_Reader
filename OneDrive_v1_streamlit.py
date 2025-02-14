@@ -25,13 +25,6 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 OPENAI_API_KEY = "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"
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# Load Universal Sentence Encoder
-embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-# Test embedding
-test_sentence = "This is a test sentence."
-embedding = embed([test_sentence]).numpy().tolist()[0]
-print("Embedding:", embedding)
-
 # Use persistent ChromaDB client
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
@@ -42,10 +35,7 @@ known_chunk_ids = set()
 # Load the Universal Sentence Encoder
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
-# Test embedding
-test_sentence = "This is a test sentence."
-embedding = embed([test_sentence]).numpy().tolist()[0]
-print("Embedding:", embedding)
+tf.config.set_visible_devices([], 'GPU')
 
 
 # Get PDF files from OneDrive folder
