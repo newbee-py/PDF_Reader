@@ -9,6 +9,7 @@ import chromadb
 import dask
 import openai
 import tensorflow as tf
+tf.config.set_visible_devices([], 'GPU')  #Disable GPU
 import tensorflow_hub as hub
 from chromadb import PersistentClient
 from dask import delayed
@@ -34,8 +35,6 @@ known_chunk_ids = set()
 
 # Load the Universal Sentence Encoder
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-
-tf.config.set_visible_devices([], 'GPU')
 
 
 # Get PDF files from OneDrive folder
