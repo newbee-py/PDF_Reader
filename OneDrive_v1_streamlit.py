@@ -5,7 +5,6 @@ sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import os
 import hashlib
 import logging
-
 import chromadb
 import dask
 import openai
@@ -183,3 +182,4 @@ with st.form(key="pdf_search_form"):
 if submit_button:
     result = process_input(onedrive_path_input, user_input)
     st.write(result)
+
