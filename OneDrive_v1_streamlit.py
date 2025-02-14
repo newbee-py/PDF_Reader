@@ -8,7 +8,7 @@ import logging
 import chromadb
 import dask
 import openai
-from chromadb import PersistentClient
+from chromadb import AdminClient
 from dask import delayed
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
@@ -39,8 +39,8 @@ os.environ["STREAMLIT_WATCHED_FILES_EXCLUDE"] = "torch"
 
 # Use persistent ChromaDB client
 # Example connection configuration
-chroma_client = PersistentClient(path="./chroma_db", tenant="default_tenant")
-chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
+admin_client = AdminClient(path="./chroma_db")
+admin_client.create_tenant(name="default_tenant")
 
 # Set of known chunk IDs for deduplication
 known_chunk_ids = set()
