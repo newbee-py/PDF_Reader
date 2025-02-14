@@ -31,7 +31,7 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 # Sample text for embedding
 sample_text = "This is a sample text for testing."
 embedding = embed([sample_text]).numpy().tolist()[0]
-st.write("Sample Embedding:", 
+st.write("Sample Embedding:", embedding)
          
 # Use persistent ChromaDB client without tenant
 chroma_client = PersistentClient(path="./chroma_db")
