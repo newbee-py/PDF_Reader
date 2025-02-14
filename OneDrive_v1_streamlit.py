@@ -11,6 +11,8 @@ import openai
 import tensorflow as tf
 tf.config.set_visible_devices([], 'GPU')  #Disable GPU
 import tensorflow_hub as hub
+# Load Universal Sentence Encoder
+embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 from chromadb import PersistentClient
 from dask import delayed
 from PyPDF2 import PdfReader
@@ -26,9 +28,11 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 OPENAI_API_KEY = "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"
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# Load Universal Sentence Encoder
-embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-
+# Sample text for embedding
+sample_text = "This is a sample text for testing."
+embedding = embed([sample_text]).numpy().tolist()[0]
+st.write("Sample Embedding:", 
+         
 # Use persistent ChromaDB client without tenant
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
