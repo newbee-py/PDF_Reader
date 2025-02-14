@@ -10,7 +10,6 @@ torchvision
 torchaudio
 protobuf==3.20.*
 altair==4.1.0
-tensorflow==2.6.0
-transformers==4.48.3
-
+tensorflow
+tensorflow_hub
 
