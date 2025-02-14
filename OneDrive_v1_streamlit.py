@@ -11,9 +11,9 @@ import openai
 from chromadb import PersistentClient
 from dask import delayed
 from PyPDF2 import PdfReader
-from sentence_transformers import SentenceTransformer
+from transformers import RobertaTokenizer, TFRobertaModel
 import streamlit as st
-import torch
+import tensorflow as tf
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -21,24 +21,16 @@ logging.basicConfig(level=logging.INFO)
 # Disable telemetry to avoid errors
 os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
-# Fix PyTorch threading issues
-torch.set_num_threads(1)
-os.environ["STREAMLIT_WATCHED_FILES_EXCLUDE"] = "torch"
-
 # OpenAI API Key
 OPENAI_API_KEY = "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"
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# Embedding model
-EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
-embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+# Load RoBERTa model and tokenizer
+MODEL_NAME = "roberta-base"
+tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
+model = TFRobertaModel.from_pretrained(MODEL_NAME)
 
-device = torch.device("cpu")
-torch.set_num_threads(1)
-os.environ["STREAMLIT_WATCHED_FILES_EXCLUDE"] = "torch"
-
-
-# ✅ Use persistent ChromaDB client (only one instance)
+# Use persistent ChromaDB client
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
@@ -89,7 +81,11 @@ def chunk_text(text, chunk_size=500, overlap=50):
 def process_chunk(chunk):
     try:
         chunk_id = hashlib.md5(chunk.encode()).hexdigest()
-        embedding = embedding_model.encode(chunk).tolist()
+        
+        # Tokenize and encode the chunk using RoBERTa
+        inputs = tokenizer(chunk, return_tensors="tf")
+        outputs = model(**inputs)
+        embedding = tf.reduce_mean(outputs.last_hidden_state, axis=1).numpy().tolist()[0]
 
         # Check if chunk already exists
         if chunk_id not in known_chunk_ids:
@@ -121,7 +117,10 @@ def query_database(query, k=5):
     if not query.strip():
         return []
 
-    query_embedding = embedding_model.encode(query).tolist()
+    inputs = tokenizer(query, return_tensors="tf")
+    outputs = model(**inputs)
+    query_embedding = tf.reduce_mean(outputs.last_hidden_state, axis=1).numpy().tolist()[0]
+
     try:
         results = chroma_collection.query(query_embeddings=[query_embedding], n_results=k)
         return results["documents"] if "documents" in results else []
@@ -183,5 +182,3 @@ with st.form(key="pdf_search_form"):
 if submit_button:
     result = process_input(onedrive_path_input, user_input)
     st.write(result)
-
-
