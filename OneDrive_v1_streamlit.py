@@ -33,8 +33,13 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
+device = torch.device("cpu")
+torch.set_num_threads(1)
+os.environ["STREAMLIT_WATCHED_FILES_EXCLUDE"] = "torch"
+
 # Use persistent ChromaDB client
-chroma_client = PersistentClient(path="./chroma_db")
+# Example connection configuration
+chroma_client = PersistentClient(path="./chroma_db", tenant="default_tenant")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
 # Set of known chunk IDs for deduplication
