@@ -53,6 +53,7 @@ def get_pdf_files(folder_path):
     try:
         pdf_files = []
         for root, dirs, files in os.walk(folder_path):
+            print(f"Scanning directory: {root}")
             for filename in files:
                 if filename.lower().endswith(".pdf"):
                     pdf_files.append(os.path.join(root, filename))
