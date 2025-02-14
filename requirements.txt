@@ -12,6 +12,5 @@ protobuf==3.20.*
 altair==4.1.0
 tensorflow
 transformers
-RobertaTokenizer
-TFRobertaModel
+
 
