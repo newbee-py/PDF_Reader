@@ -14,6 +14,7 @@ from chromadb import PersistentClient
 from dask import delayed
 from PyPDF2 import PdfReader
 import streamlit as st
+import tensorflow_hub as hub
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +35,15 @@ chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
 # Set of known chunk IDs for deduplication
 known_chunk_ids = set()
+
+# Load the Universal Sentence Encoder
+embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+
+# Test embedding
+test_sentence = "This is a test sentence."
+embedding = embed([test_sentence]).numpy().tolist()[0]
+print("Embedding:", embedding)
+
 
 # Get PDF files from OneDrive folder
 def get_pdf_files(folder_path):
