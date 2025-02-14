@@ -8,12 +8,12 @@ import logging
 import chromadb
 import dask
 import openai
+import tensorflow as tf
+import tensorflow_hub as hub
 from chromadb import PersistentClient
 from dask import delayed
 from PyPDF2 import PdfReader
-from transformers import DistilBertTokenizer, TFDistilBertModel
 import streamlit as st
-import tensorflow as tf
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -25,10 +25,8 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 OPENAI_API_KEY = "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"
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# Load DistilBERT model and tokenizer
-MODEL_NAME = "distilbert-base-uncased"
-tokenizer = DistilBertTokenizer.from_pretrained(MODEL_NAME)
-model = TFDistilBertModel.from_pretrained(MODEL_NAME)
+# Load Universal Sentence Encoder
+embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
 # Use persistent ChromaDB client
 chroma_client = PersistentClient(path="./chroma_db")
@@ -82,10 +80,8 @@ def process_chunk(chunk):
     try:
         chunk_id = hashlib.md5(chunk.encode()).hexdigest()
         
-        # Tokenize and encode the chunk using DistilBERT
-        inputs = tokenizer(chunk, return_tensors="tf")
-        outputs = model(**inputs)
-        embedding = tf.reduce_mean(outputs.last_hidden_state, axis=1).numpy().tolist()[0]
+        # Encode the chunk using Universal Sentence Encoder
+        embedding = embed([chunk]).numpy().tolist()[0]
 
         # Check if chunk already exists
         if chunk_id not in known_chunk_ids:
@@ -117,9 +113,7 @@ def query_database(query, k=5):
     if not query.strip():
         return []
 
-    inputs = tokenizer(query, return_tensors="tf")
-    outputs = model(**inputs)
-    query_embedding = tf.reduce_mean(outputs.last_hidden_state, axis=1).numpy().tolist()[0]
+    query_embedding = embed([query]).numpy().tolist()[0]
 
     try:
         results = chroma_collection.query(query_embeddings=[query_embedding], n_results=k)
@@ -182,9 +176,3 @@ with st.form(key="pdf_search_form"):
 if submit_button:
     result = process_input(onedrive_path_input, user_input)
     st.write(result)
-
-
-if submit_button:
-    result = process_input(onedrive_path_input, user_input)
-    st.write(result)
-
