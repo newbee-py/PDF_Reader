@@ -26,16 +26,15 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 OPENAI_API_KEY = "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"
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# Use persistent ChromaDB client
+# Load Universal Sentence Encoder
+embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+
+# Use persistent ChromaDB client without tenant
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
 # Set of known chunk IDs for deduplication
 known_chunk_ids = set()
-
-# Load the Universal Sentence Encoder
-embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-
 
 # Get PDF files from OneDrive folder
 def get_pdf_files(folder_path):
