@@ -1,4 +1,4 @@
-streamlit
+streamlit==1.2.0
 openai
 PyPDF2
 sentence-transformers
