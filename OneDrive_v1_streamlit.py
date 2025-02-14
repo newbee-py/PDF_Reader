@@ -181,3 +181,7 @@ with st.form(key="pdf_search_form"):
 if submit_button:
     result = process_input(onedrive_path_input, user_input)
     st.write(result)
+
+# Button to display embeddings
+if st.button("Display Embeddings"):
+    display_embeddings()
