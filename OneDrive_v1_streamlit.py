@@ -14,7 +14,6 @@ from chromadb import PersistentClient
 from dask import delayed
 from PyPDF2 import PdfReader
 import streamlit as st
-import tensorflow_hub as hub
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +27,10 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Load Universal Sentence Encoder
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+# Test embedding
+test_sentence = "This is a test sentence."
+embedding = embed([test_sentence]).numpy().tolist()[0]
+print("Embedding:", embedding)
 
 # Use persistent ChromaDB client
 chroma_client = PersistentClient(path="./chroma_db")
