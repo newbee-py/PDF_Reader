@@ -2,33 +2,29 @@ __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-import streamlit as st
 import os
-import openai
-from PyPDF2 import PdfReader
-from sentence_transformers import SentenceTransformer
-import pysqlite3  # type: ignore
-import chromadb
-from chromadb import PersistentClient
 import hashlib
 import logging
-import concurrent.futures
+
+import chromadb
 import dask
+import openai
+from chromadb import PersistentClient
 from dask import delayed
-from dask.distributed import Client
+from PyPDF2 import PdfReader
+from sentence_transformers import SentenceTransformer
+import streamlit as st
+import torch
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-# ✅ Disable telemetry to avoid errors
+# Disable telemetry to avoid errors
 os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
-# ✅ Fix PyTorch threading issues and Force CPU mode
-import torch
-device = torch.device("cpu")
+# Fix PyTorch threading issues
 torch.set_num_threads(1)
 os.environ["STREAMLIT_WATCHED_FILES_EXCLUDE"] = "torch"
-
 
 # OpenAI API Key
 OPENAI_API_KEY = "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"
@@ -36,18 +32,14 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Embedding model
 EMBEDDING_MODEL_NAME = "all-mpnet-base-v2"
-embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
+embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
-# ✅ Use persistent ChromaDB client (only one instance)
+# Use persistent ChromaDB client
 chroma_client = PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection(name="my_collection")
 
-# Define OneDrive folder path using os.path.join for cross-platform compatibility
-onedrive_folder = os.path.join("C:", "Users", "jatin.malhotra", "OneDrive - HCL TECHNOLOGIES LIMITED", "Documents", "SON Documents", "23A.1")
-if os.path.exists(onedrive_folder):
-    st.write("Folder exists:", os.listdir(onedrive_folder))
-else:
-    st.write("Folder does not exist!")
+# Set of known chunk IDs for deduplication
+known_chunk_ids = set()
 
 # Get PDF files from OneDrive folder
 def get_pdf_files(folder_path):
@@ -55,7 +47,7 @@ def get_pdf_files(folder_path):
     Get a list of PDF files from the specified OneDrive folder.
     """
     try:
-        pdf_files = []
+        pdf_files =
         for root, dirs, files in os.walk(folder_path):
             for filename in files:
                 if filename.lower().endswith(".pdf"):
@@ -64,26 +56,7 @@ def get_pdf_files(folder_path):
         return pdf_files
     except Exception as e:
         logging.error(f"Error searching OneDrive: {e}")
-        return []
-
-pdf_files = get_pdf_files(onedrive_folder)
-st.write("Found PDF files:", pdf_files)
-
-# Alternatively, let the user upload PDFs directly:
-uploaded_files = st.file_uploader("Upload PDF files", accept_multiple_files=True, type=["pdf"])
-
-# Process uploaded PDFs:
-if uploaded_files:
-    for uploaded_file in uploaded_files:
-        # Uploaded files are BytesIO objects; pass them directly to PdfReader
-        try:
-            pdf_reader = PdfReader(uploaded_file)
-            text = "".join(page.extract_text() or "" for page in pdf_reader.pages)
-            st.write(f"Extracted text from {uploaded_file.name}:")
-            st.write(text[:500] + "...")
-            # Here you can also further process the text (e.g., chunk it, embed, etc.)
-        except Exception as e:
-            st.error(f"Error reading {uploaded_file.name}: {e}")
+        return
 
 # Read PDF contents
 def read_pdf_contents(pdf_file):
@@ -98,7 +71,7 @@ def read_pdf_contents(pdf_file):
 
 # Chunk text
 def chunk_text(text, chunk_size=500, overlap=50):
-    chunks = []
+    chunks =
     start = 0
     while start < len(text):
         end = min(start + chunk_size, len(text))
@@ -114,12 +87,12 @@ def process_chunk(chunk):
         embedding = embedding_model.encode(chunk).tolist()
 
         # Check if chunk already exists
-        existing_documents = chroma_collection.get(ids=[chunk_id])
-        if existing_documents["ids"]:
+        if chunk_id not in known_chunk_ids:
+            chroma_collection.add(ids=[chunk_id], documents=[chunk], embeddings=[embedding])
+            known_chunk_ids.add(chunk_id)  # Add to known IDs
+            return f"Embedded and added chunk to ChromaDB with ID {chunk_id}"
+        else:
             return f"Chunk already exists in the database with ID {chunk_id}"
-
-        chroma_collection.add(ids=[chunk_id], documents=[chunk], embeddings=[embedding])
-        return f"Embedded and added chunk to ChromaDB with ID {chunk_id}"
     except Exception as e:
         return f"Error processing chunk: {e}"
 
@@ -141,15 +114,15 @@ def count_embeddings():
 # Query database
 def query_database(query, k=5):
     if not query.strip():
-        return []
+        return
     
     query_embedding = embedding_model.encode(query).tolist()
     try:
         results = chroma_collection.query(query_embeddings=[query_embedding], n_results=k)
-        return results["documents"] if "documents" in results else []
+        return results["documents"] if "documents" in results else
     except Exception as e:
         logging.error(f"Error querying database: {e}")
-        return []
+        return
 
 # Generate response with OpenAI
 def generate_response(query, context):
@@ -163,7 +136,7 @@ def generate_response(query, context):
             ],
             max_tokens=2000,
         )
-        return response.choices[0].message.content.strip() if response.choices else "No response generated."
+        return response.choices.message.content.strip() if response.choices else "No response generated."
     except Exception as e:
         logging.error(f"Error generating response: {e}")
         return f"Error generating response: {e}"
@@ -174,7 +147,7 @@ def process_input(onedrive_path, user_input):
     if not pdf_files:
         return "No PDFs found in the specified OneDrive folder."
 
-    all_text_chunks = []
+    all_text_chunks =
     for pdf_file in pdf_files:
         pdf_contents = read_pdf_contents(pdf_file)
         if pdf_contents:
@@ -189,11 +162,16 @@ def process_input(onedrive_path, user_input):
 
     return "No text extracted from PDFs."
 
+# Define OneDrive folder path using os.path.join
+# for cross-platform compatibility, but let the user override it
+default_onedrive_folder = os.path.join(
+    "C:", "Users", "jatin.malhotra", "OneDrive - HCL TECHNOLOGIES LIMITED", "Documents", "SON Documents", "23A.1"
+)
+
 st.title("PDF Search and Analysis - OneDrive with OpenAI")
 
 with st.form(key="pdf_search_form"):
-    # The user-provided onedrive path will override the default if supplied.
-    onedrive_path_input = st.text_input(label="OneDrive Folder Path", value=onedrive_folder)
+    onedrive_path_input = st.text_input(label="OneDrive Folder Path", value=default_onedrive_folder)
     user_input = st.text_input(label="Query")
     submit_button = st.form_submit_button(label="Submit")
 
